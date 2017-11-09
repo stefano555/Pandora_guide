@@ -1,0 +1,165 @@
+	%\documentclass[a4paper,12pt]{article}	
+	%\documentclass[11pt]{book}
+	%\documentclass{report}
+	\documentclass[9pt]{extreport}
+	\usepackage{amsmath} 
+	\usepackage{amssymb}
+	\usepackage{makeidx} 
+	\usepackage{graphicx} 
+	\usepackage[utf8]{inputenc}
+	\usepackage[T1]{fontenc}
+	\usepackage{textcomp}
+	\usepackage{float}
+	\usepackage[final]{pdfpages}
+	\usepackage{verbatim}
+        \usepackage{fancyvrb}
+        \usepackage{xcolor}
+	\usepackage{alltt}
+	\usepackage{listings}
+	\usepackage{color}
+ 
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+ 
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+ 
+\lstset{style=mystyle}
+
+	%\usepackage{caption}
+	%\usepackage{subcaption}
+	%\usepackage{booktabs}
+
+
+%\usepackage{mystyle} %Create your own file, mystyle.sty where you put all your own \newcommand statements, for example.
+
+%\includeonly{chaptr2} %If you just want to process chaptr2.tex
+
+
+	\begin{document}
+
+	\author{Stefano Vergani}
+	\title{Pandora's script}
+	\date{October 2017}
+
+
+\begin{titlepage}
+    \begin{center}
+        \vspace*{0.7cm}
+        
+        \Huge
+        \textbf{Pandora Software}\\
+        \Large
+	\textbf{The Beginner's Guide}
+    
+        \vspace{1.5cm}
+
+
+        \Large
+	written by\\
+        \textbf{Stefano Vergani}
+
+	\vspace{3cm}
+	\Large
+       
+        following the slides made by\\
+        \textbf{Dr John Marshall}
+        
+        \vspace{2cm}
+        
+        %\includegraphics[width=0.4\textwidth]{university}
+        
+        %\Large
+	%Supervised by:\\
+	%\vspace{0.5cm}}
+	%Prof. Dr. Andr\'{e} Rubbia (ETHZ)\\
+	%Prof. Dr. Janet Conrad (MIT)\\
+	%Dr. Matthew Toups (FNAL)\\
+	%\vspace{0.75 cm}
+        
+        October 23, 2017
+       
+    \end{center}
+
+\end{titlepage}
+%\afterpage{\null\newpage}
+
+% \newpage
+
+%Notes notes notes notes
+%\bigskip
+
+
+%\noindent Cavendish Laboratory,\\   October 23, 2017
+%\cleardoublepage
+%\begin{abstract}
+
+%ABSTRACT AND MOTIVATION
+
+%\end{abstract}
+
+
+	\frontmatter
+	\tableofcontents
+%\include{./preface/preface}
+
+	\mainmatter
+	\input{/var/clus/usera/sv408/pandora_script/chapter1/chapter1}
+%\afterpage{\null\newpage}
+	\input{/var/clus/usera/sv408/pandora_script/chapter2/chapter2}
+%\afterpage{\null\newpage}
+	\input{/var/clus/usera/sv408/pandora_script/chapter3/chapter3}
+%\afterpage{\null\newpage}
+%	\input{/home/stefano/Documents/fermilab/thesis/chapter4/chapter4}
+%\afterpage{\null\newpage}
+%	\input{/home/stefano/Documents/fermilab/thesis/chapter5/chapter5}
+%\afterpage{\null\newpage}
+
+
+
+	\backmatter
+%\include{glossary}
+%\include{notat}
+	\bibliographystyle{amsalpha} %The style you want to use for references.
+%\bibliography{mr,refs} %The files containing all the articles and books you ever referenced.
+	\printindex %Make an index AUTOMATICALLY
+
+	\addcontentsline{toc}{section}{References}
+  	\begin{thebibliography}{1}
+
+	\bibitem{fcl_guide} FHiCL 3 Quick Start Guide https://cdcvs.fnal.gov/redmine/projects/uboonecode/wiki/Guide${\_}$to${\_}$Using${\_}$FCL${\_}$files${\_}$in${\_}$MicroBooNE 
+	\bibitem{larsoft} Introduction to LArSoft Software https://cdcvs.fnal.gov/redmine/projects/larsoft/wiki/Introduction${\_}$to${\_}$LArSoft
+	\bibitem{pandora_doc} GitHub page containing Pandora documentation https://github.com/PandoraPFA
+	\bibitem{stack_basics} Difference between framework vs Library vs IDE vs API vs SDK vs Toolkits? https://stackoverflow.com/questions/8772746/difference-between-framework-vs-library-vs-ide-vs-api-vs-sdk-vs-toolkits
+	\bibitem{pandorasdk_paper} J.S. Marshall, M.A. Thomson {\em The Pandora Software Development Kit for Pattern Recognition} arXiv:1506.05348
+  	\end{thebibliography}
+
+	\appendix
+%\addcontentsline{toc}{chapter}{Appendix}
+	%\addtocontents{toc}{\protect\contentsline{chapter}{Appendix:}{}}
+	%\chapter{Hamamatsu MPPCs}\label{sssec:mppc}
+	%\includepdf[pages=-]{/home/stefano/Documents/fermilab/thesis/pictures/s13360_series_kapd1052e.pdf}
+	%\chapter{Diodes}\label{sssec:diode1}
+	%\includepdf[pages=-]{/home/stefano/Documents/fermilab/thesis/pictures/diode1.pdf}
+	%\includepdf[pages=-]{/home/stefano/Documents/fermilab/thesis/pictures/diode2.pdf}
+	
+
+  	\end{document}

@@ -1,0 +1,20 @@
+\contentsline {chapter}{\numberline {1}First Approach with Pandora}{2}
+\contentsline {section}{\numberline {1.1}Run Pandora Blind}{2}
+\contentsline {subsection}{\numberline {1.1.1}UBOONECODE}{2}
+\contentsline {subsection}{\numberline {1.1.2}FCL files}{3}
+\contentsline {subsection}{\numberline {1.1.3}XML files and Enable Visualisation}{4}
+\contentsline {subsection}{\numberline {1.1.4}Pandora Interface}{5}
+\contentsline {section}{\numberline {1.2}Write Events in Pandora Format}{6}
+\contentsline {chapter}{\numberline {2}A New Algorithm}{8}
+\contentsline {section}{\numberline {2.1}Run Pandora Locally}{8}
+\contentsline {subsection}{\numberline {2.1.1}Setup}{8}
+\contentsline {subsection}{\numberline {2.1.2}Installation}{9}
+\contentsline {section}{\numberline {2.2}Adding a new Algorithm}{10}
+\contentsline {subsection}{\numberline {2.2.1}Geometry Files}{12}
+\contentsline {chapter}{\numberline {3}Cluster Creation}{14}
+\contentsline {section}{\numberline {3.1}Algorithm Configuration}{14}
+\contentsline {subsection}{\numberline {3.1.1}Application Programming Interfaces}{19}
+\contentsline {section}{\numberline {3.2}Adding a Sorting Algorithm}{19}
+\contentsline {section}{\numberline {3.3}Adding MCParticle List}{22}
+\contentsline {subsection}{\numberline {3.3.1}Enable Visualisation}{24}
+\contentsline {section}{References}{25}

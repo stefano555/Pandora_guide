@@ -1,0 +1,302 @@
+	\chapter{A New Algorithm}
+
+In this chapter it will explained how to run for the first time Pandora from a computer locally. In the previous chapter, the exercises have been done using the LArSoft stored in the Fermilab servers. At the end of this section, the student will have her/his own version of Pandora stored locally. 
+
+	
+\section{Run Pandora Locally}
+
+In this chapter it will explained how to run for the first time Pandora from a computer locally.
+
+
+\subsection{Setup} \label{sssec:setup} 
+
+As first thing, digit the following commands:
+
+\begin{verbatim}
+
+export MY_TEST_AREA=/path/to/your/test/area
+export PANDORA_PFA_VERSION=v03-06-00
+export ROOT_CMAKE_MODULE_PATH=/path/to/your/FindROOT.cmake/file
+
+\end{verbatim}
+
+This is to set the identifiers MY${\_}$TEST${\_}$AREA, ROOT${\_}$CMAKE${\_}$MODULE${\_}$PATH and PANDORA${\_}$PFA${\_}$VERSION (to see what is an identifier go to Section \ref{sssec:uboonecode}). With Pandora PFA we mean Pandora Particle Flow Algorithm,which is the GitHub name for Pandora \cite{pandora_doc}. It is worth noting that whilst the first area could be any possible folder you like, the Pandora version and the path to the Root cmake must be choosen wisely. For the version of a software it is always a good idea to try the latest version (for Pandora can be found here \cite{pandora_doc}). If it gives problems, simply try the recommended version or older ones. The path to the Root cmake interely dipends on where you saved Root. If you want to use Root stored in Fermilab
+
+\begin{verbatim}
+
+export ROOT_CMAKE_MODULE_PATH=$ROOTSYS/etc/cmake/FindROOT.cmake
+
+\end{verbatim}
+
+If you now try an echo command, it should give you back the path you indicated. One should type these three commands everytime a new terminal is opened. To avoid that, there are two possible options. The first one is to create a script, called for example setup.sh. This script will contain those three commands and typing 
+
+\begin{verbatim}
+
+source setup.sh
+
+\end{verbatim}
+
+the commands will be launched. There is also the possibility to launch automatically these commands. Go to your home directory and modify the file .bashrc. This file contain all the commands the terminal automatically run when it is opened. One can simply add the three exports, but this is not always the best thing to do because not always we want all these commands to be run automatically. So another option is to type:
+
+\begin{verbatim}
+
+alias start='source path/to/your/setup.sh'
+
+\end{verbatim}
+
+With this command, everytime one will digit "start" the command source setup.sh will be launched.
+
+\subsection{Installation} \label{sssec:installation} 
+
+Digit
+
+\begin{verbatim}
+
+cd $MY_TEST_AREA
+git clone 
+git clone https://github.com/PandoraPFA/PandoraPFA
+cd PandoraPFA
+git checkout $PANDORA_PFA_VERSION
+
+\end{verbatim}
+
+After this, you will have cloned the github repository on your machine. at this point create a folder to build Pandora
+
+\begin{verbatim}
+
+mkdir build
+cd build
+
+\end{verbatim}
+
+and create the cmake file
+
+\begin{verbatim}
+
+cmake -DCMAKE_MODULE_PATH=$ROOT_CMAKE_MODULE_PATH \
+-DPANDORA_MONITORING=ON -DPANDORA_LAR_CONTENT=ON  \
+-DCMAKE_CXX_FLAGS=-std=c++14 ..
+
+\end{verbatim}
+
+the last command, -DCMAK${\_}$CXX${\_}$FLAGS=-std=c++14 orders to use the latest compiler avaible or at least version 14. The double dots at the end tells the compiler to search the file outside the directory "build".
+
+Now it is possible to install Pandora locally
+
+\begin{verbatim}
+
+make -j4 install
+
+\end{verbatim}
+
+The installation process should take a couple of minutes. After that, we will setup a library and applicatio explicity tailored for the next exercises.
+
+\begin{verbatim}
+
+cd $MY_TEST_AREA
+git clone https://github.com/PandoraPFA/WorkshopContent
+cd WorkshopContent
+mkdir build
+cd build
+
+cmake -DCMAKE_MODULE_PATH="$ROOT_CMAKE_MODULE_PATH;$MY_TEST_AREA/PandoraPFA/cmakemodules" \
+-DPandoraSDK_DIR=$MY_TEST_AREA/PandoraPFA -DPANDORA_MONITORING=ON                         \
+-DPandoraMonitoring_DIR=$MY_TEST_AREA/PandoraPFA                                          \
+-DLArContent_DIR=$MY_TEST_AREA/PandoraPFA -DCMAKE_CXX_FLAGS=-std=c++14 ..
+
+make -j4 install
+
+\end{verbatim}
+
+\section{Adding a new Algorithm} \label{sssec:new_algorithm}
+
+In this part we will create a new algorithm. To do so we have to go in the subfolder Algorithms. There is already a set of templates which can be used. Digit
+
+\begin{verbatim}
+
+cd $MY_TEST_AREA/WorkshopContent/workshopcontent/Algorithms
+python CreateNewAlgorithm.py --name MyTest
+
+\end{verbatim}
+
+The last command will create a new algorithm called MyTestAlgorithm (both .cc and .h files) using the existing templates. Now digit 
+
+\begin{verbatim}
+
+cd ..
+cd Test
+
+\end{verbatim}
+
+and modify the file PandoraWorkshop.cc adding the parts in red:
+
+\begin{lstlisting}[language=C++, caption=Python example]
+
+...
+
+#include "Api/PandoraApi.h"
+
+#include "larpandoracontent/LArContent.h"
+#include "larpandoracontent/LArPlugins/LArPseudoLayerPlugin.h"
+#include "larpandoracontent/LArPlugins/LArRotationalTransformationPlugin.h"
+
+\textcolor{red}{#include "workshopcontent/Algorithms/MyTestAlgorithm.h"}
+
+#ifdef MONITORING
+#include "TApplication.h"
+#endif
+
+...
+
+int main(int argc, char *argv[])
+{
+    try
+    {
+        Parameters parameters;
+
+        if (!ParseCommandLine(argc, argv, parameters))
+            return 1;
+
+#ifdef MONITORING
+        TApplication *const pTApplication = new TApplication("Workshop", &argc, argv);
+        pTApplication->SetReturnFromRun(kTRUE);
+#endif
+        const pandora::Pandora *const pPandora = new pandora::Pandora();
+
+        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, LArContent::RegisterAlgorithms(*pPandora));
+        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, LArContent::RegisterBasicPlugins(*pPandora));
+        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::SetPseudoLayerPlugin(*pPandora, new lar_content::LArPseudoLayerPlugin));
+        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::SetLArTransformationPlugin(*pPandora, new lar_content::LArRotationalTransformationPlugin));
+
+\textcolor{red}{PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterAlgorithmFactory(*pPandora, "MyTestAlgorithm", new workshop_content::MyTestAlgorithm::Factory));}
+
+        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::ReadSettings(*pPandora, parameters.m_pandoraSettingsFile));
+
+        int nEvents(0);
+        while ((nEvents++ < parameters.m_nEventsToProcess) || (0 > parameters.m_nEventsToProcess))
+        {
+            if (parameters.m_shouldDisplayEventNumber)
+                std::cout << std::endl << "   PROCESSING EVENT: " << (nEvents - 1) << std::endl << std::endl;
+
+            PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::ProcessEvent(*pPandora));
+            PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::Reset(*pPandora));
+        }
+
+        delete pPandora;
+    }
+    catch (pandora::StatusCodeException &statusCodeException)
+    {
+        std::cerr << "Pandora Exception caught: " << statusCodeException.ToString() << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+\end{lstlisting}
+
+This will ???????????????????????.
+At this point, go to the build folder, re-run the CMake and do make install.
+
+\begin{verbatim}
+
+cd $MY_TEST_AREA/WorkshopContent/build
+
+cmake -DCMAKE_MODULE_PATH="$ROOT_CMAKE_MODULE_PATH;$MY_TEST_AREA/PandoraPFA/cmakemodules" \
+-DPandoraSDK_DIR=$MY_TEST_AREA/PandoraPFA -DPANDORA_MONITORING=ON                         \
+-DPandoraMonitoring_DIR=$MY_TEST_AREA/PandoraPFA                                          \
+-DLArContent_DIR=$MY_TEST_AREA/PandoraPFA -DCMAKE_CXX_FLAGS=-std=c++14 ..
+
+make install
+
+\end{verbatim}
+
+At this point, the last thing to do is to run the new algorithm.
+
+\begin{verbatim}
+
+cd $MY_TEST_AREA/WorkshopContent/settings
+
+\end{verbatim}
+
+and modify the file PandoraSettings${\_}$Workshop.xml at line 30 adding
+
+\begin{verbatim}
+
+  <algorithm type = "MyTestAlgorithm"/>
+
+\end{verbatim}
+
+because we have to declare the new algorithm.
+
+Now digit
+
+\begin{verbatim}
+
+$MY_TEST_AREA/WorkshopContent/bin/PandoraWorkshop -?
+
+\end{verbatim}
+
+This command tells you which arguments you have to give to run the programm. In this case, the outcome will be
+
+\begin{verbatim}
+
+PandoraWorkshop 
+    -i PandoraSettings.xml (required)
+    -n NEventsToProcess    (optional)
+    -N                     (optional, display event numbers)
+
+
+\end{verbatim}
+
+So, launch the programm with
+
+\begin{verbatim}
+
+$MY_TEST_AREA/WorkshopContent/bin/PandoraWorkshop                      \
+-i $MY_TEST_AREA\WorkshopContent/settings/PandoraSettings_Workshop.xml \
+-n 10
+
+\end{verbatim}
+
+This programm will give you this error
+
+\begin{verbatim}
+
+Failure in reading pandora settings, STATUS_CODE_FAILURE
+PandoraApi::ReadSettings(*pPandora, parameters.m_pandoraSettingsFile) throw STATUS_CODE_FAILURE
+    in function: main
+    in file:     /usera/sv408/WorkshopContent/workshopcontent/Test/PandoraWorkshop.cc line#: 88
+Pandora Exception caught: STATUS_CODE_FAILURE
+
+\end{verbatim}
+
+\subsection{Geometry Files} \label{sssec:geometry_files}
+
+The previous error is due to the fact we did not specify a Geometry file. In fact, if we have a look to the PandoraSettings${\_}$Workshop.xml
+
+\begin{lstlisting}[language=XML, caption=Python example]
+
+    <!-- ALGORITHM SETTINGS -->
+    <algorithm type = "LArEventReading">
+        <EventFileNameList>/path/to/geometry/.pndr/or/.xml</EventFileNameList>
+        <GeometryFileName>/path/to/geometry/.pndr/or/.xml</GeometryFileName>
+        <SkipToEvent>0</SkipToEvent>
+    </algorithm>
+
+\end{lstlisting}
+
+we see we have to specify a geometry file. Pandora is quite a flexible software that can be adapted for a variety of different detectors. Every different detector needs a specific geometry file, and in this case we want the geometry file related to MicroBooNE. So change the PandoraSettings${\_}$Workshop.xml in this way
+
+\begin{lstlisting}[language=XML, caption=Python example]
+
+    <!-- ALGORITHM SETTINGS -->
+    <algorithm type = "LArEventReading">
+        <EventFileNameList>/r05/uboone/jjd49/cincinatti_sample/Pandora_Events_Cincinatti_BNB_NuMu_1714.pndr</EventFileNameList>
+        <GeometryFileName>/usera/sv408/WorkshopContent/settings/uboone/Geometry_MicroBooNE.xml</GeometryFileName>
+        <SkipToEvent>0</SkipToEvent>
+    </algorithm>
+
+\end{lstlisting}
+
+and this time the program will work.
