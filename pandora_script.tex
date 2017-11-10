@@ -25,11 +25,11 @@
  
 \lstdefinestyle{mystyle}{
     backgroundcolor=\color{backcolour},   
-    commentstyle=\color{codegreen},
-    keywordstyle=\color{magenta},
-    numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
-    basicstyle=\footnotesize,
+    %commentstyle=\color{codegreen},
+    %keywordstyle=\color{magenta},
+    %numberstyle=\tiny\color{codegray},
+    %stringstyle=\color{codepurple},
+    basicstyle=\scriptsize\ttfamily,
     breakatwhitespace=false,         
     breaklines=true,                 
     captionpos=b,                    
@@ -39,10 +39,18 @@
     showspaces=false,                
     showstringspaces=false,
     showtabs=false,                  
-    tabsize=2
+    tabsize=2,
 }
  
 \lstset{style=mystyle}
+
+\lstset{language=C++,
+                basicstyle=\scriptsize\ttfamily,
+                keywordstyle=\color{red}\scriptsize\ttfamily,
+                stringstyle=\color{magenta}\scriptsize\ttfamily,
+                commentstyle=\color{blue}\scriptsize\ttfamily,
+                morecomment=[l][\color{magenta}]{\#}
+}
 
 	%\usepackage{caption}
 	%\usepackage{subcaption}

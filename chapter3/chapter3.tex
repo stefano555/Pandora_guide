@@ -681,3 +681,172 @@ $MY_TEST_AREA/WorkshopContent/examplecontent/ExampleAlgorithms/DisplayListsAlgor
 \end{verbatim}
 
 \section{Cluster Creationg} \label{sssec:cluster_creation}
+
+A cluster is defined as
+
+Modify MyTestAlgorithm.cc in this way:
+\begin{lstlisting}[language=C++, label=code:first_cluster, caption=MyTestAlgorithm.cc creates a basic set of clusters]
+#include "Pandora/AlgorithmHeaders.h"
+#include "larpandoracontent/LArHelpers/LArClusterHelper.h"
+#include "larpandoracontent/LArHelpers/LArMCParticleHelper.h"
+#include "workshopcontent/Algorithms/MyTestAlgorithm.h"
+
+using namespace pandora;
+using namespace lar_content;
+
+namespace workshop_content
+{
+
+MyTestAlgorithm::MyTestAlgorithm():
+	m_outputClusterListName(),
+	m_nHitsPerCluster(10)
+	{
+	}
+
+StatusCode MyTestAlgorithm::Run()
+{
+	//CaloHits
+	const CaloHitList *pCaloHitList(nullptr);
+	PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
+	
+	const ClusterList *pTemporaryList(nullptr);
+	std::string temporaryListName;
+	PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pTemporaryList, temporaryListName));
+	
+	CaloHitVector sortedCaloHits(pCaloHitList->begin(), pCaloHitList->end());
+	std::sort(sortedCaloHits.begin(), sortedCaloHits.end(), LArClusterHelper::SortHitsByPosition);
+
+	const Cluster *pCluster(nullptr);
+	
+	for (const CaloHit *const pCaloHit : sortedCaloHits)
+	{
+		if (!PandoraContentApi::IsAvailable(*this, pCaloHit))
+		    continue;
+		if (!pCluster || (pCluster->GetNCaloHits() >= m_nHitsPerCluster))
+		{
+		   PandoraContentApi::Cluster::Parameters parameters;
+                   parameters.m_caloHitList.push_back(pCaloHit);
+		   PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, parameters, pCluster));
+		}
+  		else
+ 		{
+		  PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddToCluster(*this, pCluster, pCaloHit));
+		}
+	}
+	if (!pTemporaryList->empty())
+	{
+	   PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<Cluster>(*this, m_outputClusterListName));
+	   PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<Cluster>(*this, m_outputClusterListName));
+	}
+	return STATUS_CODE_SUCCESS;
+}
+
+StatusCode MyTestAlgorithm::ReadSettings(const TiXmlHandle xmlHandle)
+	{
+	  PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, XmlHelper::ReadValue(xmlHandle, "OutputClusterListName", m_outputClusterListName));
+	  PANDORA_RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, XmlHelper::ReadValue(xmlHandle,"NHitsPerCluster", m_nHitsPerCluster));
+	  return STATUS_CODE_SUCCESS;
+	}
+
+}
+\end{lstlisting}
+
+change also the MyTestAlgorithm.h
+
+\begin{lstlisting}[language=C++, label=code:first_cluster.h, caption=MyTestAlgorithm.h]
+#ifndef WORKSHOP_MYTEST_ALGORITHM_H
+#define WORKSHOP_MYTEST_ALGORITHM_H 1
+
+#include "Pandora/Algorithm.h"
+
+namespace workshop_content
+{
+
+/**
+ *  @brief  MyTestAlgorithm class
+ */
+class MyTestAlgorithm : public pandora::Algorithm
+{
+public:
+    MyTestAlgorithm();
+	
+    /**
+     *  @brief  Factory class for instantiating algorithm
+     */
+  
+ class Factory : public pandora::AlgorithmFactory
+    {
+    public:
+        pandora::Algorithm *CreateAlgorithm() const;
+    };
+
+
+	
+private:
+    pandora::StatusCode Run();
+    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+
+    // Member variables here
+
+    std::string m_outputClusterListName;
+unsigned int m_nHitsPerCluster;
+
+};
+
+
+inline pandora::Algorithm *MyTestAlgorithm::Factory::CreateAlgorithm() const
+{
+    return new MyTestAlgorithm();
+}
+
+} // namespace workshop_content
+
+#endif // #ifndef WORKSHOP_MYTEST_ALGORITHM_H
+\end{lstlisting}
+
+and the PandoraSettings_Workshop.xml
+
+\begin{lstlisting}[language=C++, label=code:first_cluster.xml, caption=PandoraSettings_Workshop.xml]
+<pandora>
+    <!-- GLOBAL SETTINGS -->
+    <IsMonitoringEnabled>true</IsMonitoringEnabled>
+    <ShouldDisplayAlgorithmInfo>true</ShouldDisplayAlgorithmInfo>
+    <SingleHitTypeClusteringMode>true</SingleHitTypeClusteringMode>
+
+    <!-- ALGORITHM SETTINGS -->
+    <algorithm type = "LArEventReading">
+        <EventFileNameList>/r05/uboone/jjd49/cincinatti_sample/Pandora_Events_Cincinatti_BNB_NuMu_1714.pndr</EventFileNameList>
+        <GeometryFileName>/usera/sv408/WorkshopContent/settings/uboone/Geometry_MicroBooNE.xml</GeometryFileName>
+        <SkipToEvent>0</SkipToEvent>
+    </algorithm>
+
+    <!-- LAR TPC EVENT RECONSTRUCTION -->
+    <algorithm type = "LArListPreparation">
+        <OnlyAvailableCaloHits>true</OnlyAvailableCaloHits>
+        <OutputCaloHitListNameW>CaloHitListW</OutputCaloHitListNameW>
+        <OutputCaloHitListNameU>CaloHitListU</OutputCaloHitListNameU>
+        <OutputCaloHitListNameV>CaloHitListV</OutputCaloHitListNameV>
+        <FilteredCaloHitListName>CaloHitList2D</FilteredCaloHitListName>
+        <CurrentCaloHitListReplacement>CaloHitListW</CurrentCaloHitListReplacement>
+        <OutputMCParticleListNameU>MCParticleListU</OutputMCParticleListNameU>
+        <OutputMCParticleListNameV>MCParticleListV</OutputMCParticleListNameV>
+        <OutputMCParticleListNameW>MCParticleListW</OutputMCParticleListNameW>
+        <OutputMCParticleListName3D>MCParticleList3D</OutputMCParticleListName3D>
+        <CurrentMCParticleListReplacement>MCParticleListW</CurrentMCParticleListReplacement>
+        <MipEquivalentCut>0.</MipEquivalentCut>
+    </algorithm>
+<!-- parte nuova -->
+   <algorithm type = "MyTestAlgorithm">
+	<OutputClusterListName>MyFirstClusterW</OutputClusterListName>
+    </algorithm>
+<!-- fine parte nuova -->
+    <algorithm type = "LArVisualMonitoring">
+        <CaloHitListNames>CaloHitListW CaloHitListU CaloHitListV</CaloHitListNames>
+        <MCParticleListNames>MCParticleList3D</MCParticleListNames>
+        <SuppressMCParticles>22:0.01 2112:1.0</SuppressMCParticles>
+        <ShowDetector>true</ShowDetector>
+	<ClusterListNames>MyFirstClustersW</ClusterListNames>
+    </algorithm>
+</pandora>
+\end{lstlisting}
+
