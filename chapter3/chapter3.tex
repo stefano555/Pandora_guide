@@ -915,10 +915,18 @@ If you do not have a cluster or the cluster is already filled with more CaloHits
 	return STATUS_CODE_SUCCESS;
 }
 \end{lstlisting}
-Quando hai finito la list, salvala.
+If the PTemporaryList is NOT empty, SaveList saves a list of objects in a list with a specified name and it creates new list if required. ReplaceCurrentList replaces the current list with a pre-saved one and it deletes the current.
 
 \begin{lstlisting}[language=C++]
+StatusCode MyTestAlgorithm::ReadSettings(const TiXmlHandle xmlHandle)
+	{
+	  PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, XmlHelper::ReadValue(xmlHandle, "OutputClusterListName", m_outputClusterListName));
+	  PANDORA_RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, XmlHelper::ReadValue(xmlHandle,"NHitsPerCluster", m_nHitsPerCluster));
+	  return STATUS_CODE_SUCCESS;
+	}
 \end{lstlisting}
+
+ReadValue reads a vector of values from a (space separated) list in an xml element.
 
 \begin{lstlisting}[language=C++]
 \end{lstlisting}
