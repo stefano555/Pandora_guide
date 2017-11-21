@@ -1,0 +1,361 @@
+\chapter{Cluster Merging}
+
+In this section we will see different examples of meging codes for clusters.
+
+\section{First Cluster Merging Algorithm} \label{sssec:first_merging}
+\subsection{CC and Header file} \label{sssec:first_merging_ccandh}
+We have to write a new algorithm called MyClusterMergingAlgorithm, and therefore as first thing we havew to run:
+\begin{verbatim}
+python CreateNewAlgorithm.py --name MyClusterMerging
+\end{verbatim}
+At this point modify MyMergingAlgorithm.cc as it follows:
+\begin{lstlisting}[language=C++,caption=MyClusterMergingAlgorithm.cc]
+#include "Pandora/AlgorithmHeaders.h"
+#include "larpandoracontent/LArHelpers/LArClusterHelper.h"
+#include "larpandoracontent/LArHelpers/LArMCParticleHelper.h"
+#include "workshopcontent/Algorithms/MyClusterMergingAlgorithm.h"
+
+using namespace pandora;
+using namespace lar_content;
+
+namespace workshop_content
+{
+MyClusterMergingAlgorithm::MyClusterMergingAlgorithm():
+	m_inputClusterListName(),
+	m_minClusterCaloHits(1),// THESE ARE RANDOM NUMBERS USED TO SHOW HOW IT WORKS
+	m_maxClusterSeparation(10)//
+{
+}
+
+void MyClusterMergingAlgorithm::GetSortedLongClusters(const ClusterList *const pClusterList, ClusterVector &sortedLongClusters) const
+{
+	for (const Cluster *const pCluster : *pClusterList)
+	{
+		if (pCluster->GetNCaloHits() > m_minClusterCaloHits)
+		sortedLongClusters.push_back(pCluster);
+	}
+	std::sort(sortedLongClusters.begin(), sortedLongClusters.end(), LArClusterHelper::SortByNHits);
+}
+
+bool MyClusterMergingAlgorithm::AreClustersAssociated(const Cluster *const pParentCluster, const Cluster *const pDaughterCluster) const
+{
+	// TODO This is where the crucial cluster-merging decision is to be made - add sophistication here!
+	if (LArClusterHelper::GetClosestDistance(pParentCluster, pDaughterCluster) > m_maxClusterSeparation)
+	 return false;
+
+	return true;
+}
+
+
+StatusCode MyClusterMergingAlgorithm::Run()
+{
+	const ClusterList *pClusterList(nullptr);
+	PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, m_inputClusterListName, pClusterList));
+
+	ClusterVector sortedLongClusters;
+	this->GetSortedLongClusters(pClusterList, sortedLongClusters);
+
+	ClusterList defunctClusters;
+	
+	for (const Cluster *const pParentCluster : sortedLongClusters)
+	{
+ 
+bool isInListParent(std::find(defunctClusters.begin(), defunctClusters.end(), pParentCluster) != defunctClusters.end());
+
+if (isInListParent) continue;
+		
+		for (const Cluster *const pDaughterCluster : sortedLongClusters)
+		{
+bool isInListDaughter(std::find(defunctClusters.begin(), defunctClusters.end(), pDaughterCluster) != defunctClusters.end());
+			if ((pParentCluster == pDaughterCluster) || (isInListDaughter))
+			continue;
+			
+			if (!this->AreClustersAssociated(pParentCluster, pDaughterCluster))
+			continue;
+
+			PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(*this, pParentCluster, pDaughterCluster));
+			defunctClusters.push_back(pDaughterCluster);
+		}
+
+	}
+	return STATUS_CODE_SUCCESS;
+}
+StatusCode MyClusterMergingAlgorithm::ReadSettings(const TiXmlHandle xmlHandle)
+	{
+	  PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, XmlHelper::ReadValue(xmlHandle, "InputClusterListName", m_inputClusterListName));
+	  return STATUS_CODE_SUCCESS;
+	}
+}
+\end{lstlisting}
+This code takes all the clusters, it sorts them, it define a cluster parent and a daughter and it checks the distance between those 2. If the distance is higher than a certain number it will not merge them together otherwise it will. Now let's go through all the important parts of this file.
+
+\begin{lstlisting}[language=C++]
+void MyClusterMergingAlgorithm::GetSortedLongClusters(const ClusterList *const pClusterList, ClusterVector &sortedLongClusters) const
+{
+	for (const Cluster *const pCluster : *pClusterList)
+	{
+		if (pCluster->GetNCaloHits() > m_minClusterCaloHits)
+		sortedLongClusters.push_back(pCluster);
+	}
+	std::sort(sortedLongClusters.begin(), sortedLongClusters.end(), LArClusterHelper::SortByNHits);
+}
+\end{lstlisting}
+GetSortedLongClusters is a function of MyClusterMergingAlgorithm that if the number of CaloHits cointained is bigger than a certain number m${\_}$minClusterCaloHits, it puts that cluster at the end of the list sortedLongClusters. Than, starting from the first element of that list until the last one, those clusters are sorted according to the number of CaloHits in each cluster.
+\begin{lstlisting}[language=C++]
+bool MyClusterMergingAlgorithm::AreClustersAssociated(const Cluster *const pParentCluster, const Cluster *const pDaughterCluster) const
+{
+	// TODO This is where the crucial cluster-merging decision is to be made - add sophistication here!
+	if (LArClusterHelper::GetClosestDistance(pParentCluster, pDaughterCluster) > m_maxClusterSeparation)
+	 return false;
+
+	return true;
+}
+\end{lstlisting}
+AreClusterAssociated is the foundamental function to decide wheter a cluster should be merged or not. In this case, if the distance between two clusters is smaller than m${\_}$maxClusterSeparation, AreClusterAssociated will be true.
+\begin{lstlisting}[language=C++]
+	const ClusterList *pClusterList(nullptr);
+	PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, m_inputClusterListName, pClusterList));
+
+	ClusterVector sortedLongClusters;
+	this->GetSortedLongClusters(pClusterList, sortedLongClusters);
+
+\end{lstlisting}
+
+In this part the cluster list is read from the input file and saved in the pClusterList, at the beginning initialised to a null pointer. Those clusters are then sorted.
+
+\begin{lstlisting}[language=C++]
+ClusterList defunctClusters;
+	
+	for (const Cluster *const pParentCluster : sortedLongClusters)
+	{
+ 
+bool isInListParent(std::find(defunctClusters.begin(), defunctClusters.end(), pParentCluster) != defunctClusters.end());
+
+if (isInListParent) continue;
+\end{lstlisting}
+
+A list defunctClusters is defined, that is the list of Clusters which have already been used (at this stage the list is empty). Then it starts a for-cicle over all the the sorted Clusters in sortedLongClusters. The standard definition is the following:
+
+\begin{verbatim}
+for(type name: where)
+\end{verbatim} 
+in this case the type is const Cluster *const, the name of the current element is pParentCluster and where is sortedLongCLuster. Then we have the bool function isInListParent. It works like that: if pParentCluster is in defunctClusters list it returns true. It searches pParentCluster from begin to end, where end is one step forward the last occupied cluster. If the pParentCluster is not found, by default it said that it lives in defunctCluster.end. If isInListParent is true, than that pParentCluster is skipped, because it means it has already been used.
+\begin{lstlisting}[language=C++]
+for (const Cluster *const pDaughterCluster : sortedLongClusters)
+		{
+bool isInListDaughter(std::find(defunctClusters.begin(), defunctClusters.end(), pDaughterCluster) != defunctClusters.end());
+			if ((pParentCluster == pDaughterCluster) || (isInListDaughter))
+			continue;
+\end{lstlisting}
+You do the same things for the pDaughterCluster plus you request to take clusters which where not pParentCluster. Basically you take a pParentCluster and then you get a list of other pDaughter which have not previously used.
+
+\begin{lstlisting}[language=C++]
+			if (!this->AreClustersAssociated(pParentCluster, pDaughterCluster))
+			continue;
+
+			PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(*this, pParentCluster, pDaughterCluster));
+			defunctClusters.push_back(pDaughterCluster);
+		}
+
+	}
+	return STATUS_CODE_SUCCESS;
+\end{lstlisting}
+
+If AreClustersAssociated is not true (the distance is bigger than the max distance), skip that daughter, otherwise merge the cluster and put pDaughterCluster in defunctClusters.\\
+We have then to modify accordingly the header file.
+\begin{lstlisting}[language=C++, caption=MyClusterMergingAlgorithm.h]
+#ifndef WORKSHOP_MYCLUSTERMERGING_ALGORITHM_H
+#define WORKSHOP_MYCLUSTERMERGING_ALGORITHM_H 1
+
+#include "Pandora/Algorithm.h"
+
+namespace workshop_content
+{
+
+/**
+ *  @brief  MyClusterMergingAlgorithm class
+ */
+class MyClusterMergingAlgorithm : public pandora::Algorithm
+{
+public:
+    MyClusterMergingAlgorithm();
+	
+    /**
+     *  @brief  Factory class for instantiating algorithm
+     */
+  
+ class Factory : public pandora::AlgorithmFactory
+    {
+    public:
+        pandora::Algorithm *CreateAlgorithm() const;
+    };
+
+
+	
+private:
+    pandora::StatusCode Run();
+    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+
+    // Member variables here
+ void GetSortedLongClusters(const pandora::ClusterList *const pClusterList, pandora::ClusterVector &sortedLongClusters) const;
+ bool AreClustersAssociated(const pandora::Cluster *const pParentCluster, const pandora::Cluster *const pDaughterCluster) const;
+
+
+ std::string m_inputClusterListName;
+ unsigned int m_minClusterCaloHits;
+ unsigned int m_maxClusterSeparation;
+
+};
+
+
+inline pandora::Algorithm *MyClusterMergingAlgorithm::Factory::CreateAlgorithm() const
+{
+    return new MyClusterMergingAlgorithm();
+}
+
+} // namespace workshop_content
+
+#endif // #ifndef WORKSHOP_MYCLUSTERMERGING_ALGORITHM_H
+\end{lstlisting}
+Then, we have to modify PandoraSettings${\_}$Workshop.xml from the version from
+\begin{lstlisting}[language=XML, caption=Previous version of PandoraSettings${\_}$Workshop.xml]
+<pandora>
+    <!-- GLOBAL SETTINGS -->
+    <IsMonitoringEnabled>true</IsMonitoringEnabled>
+    <ShouldDisplayAlgorithmInfo>true</ShouldDisplayAlgorithmInfo>
+    <SingleHitTypeClusteringMode>true</SingleHitTypeClusteringMode>
+
+    <!-- ALGORITHM SETTINGS -->
+    <algorithm type = "LArEventReading">
+        <EventFileNameList>/r05/uboone/jjd49/cincinatti_sample/Pandora_Events_Cincinatti_BNB_NuMu_1714.pndr</EventFileNameList>
+        <GeometryFileName>/usera/sv408/WorkshopContent/settings/uboone/Geometry_MicroBooNE.xml</GeometryFileName>
+        <SkipToEvent>0</SkipToEvent>
+    </algorithm>
+    <!-- LAR TPC EVENT RECONSTRUCTION -->
+    <algorithm type = "LArListPreparation">
+        <OnlyAvailableCaloHits>true</OnlyAvailableCaloHits>
+        <OutputCaloHitListNameW>CaloHitListW</OutputCaloHitListNameW>
+        <OutputCaloHitListNameU>CaloHitListU</OutputCaloHitListNameU>
+        <OutputCaloHitListNameV>CaloHitListV</OutputCaloHitListNameV>
+        <FilteredCaloHitListName>CaloHitList2D</FilteredCaloHitListName>
+        <CurrentCaloHitListReplacement>CaloHitListW</CurrentCaloHitListReplacement>
+        <OutputMCParticleListNameU>MCParticleListU</OutputMCParticleListNameU>
+        <OutputMCParticleListNameV>MCParticleListV</OutputMCParticleListNameV>
+        <OutputMCParticleListNameW>MCParticleListW</OutputMCParticleListNameW>
+        <OutputMCParticleListName3D>MCParticleList3D</OutputMCParticleListName3D>
+        <CurrentMCParticleListReplacement>MCParticleListW</CurrentMCParticleListReplacement>
+        <MipEquivalentCut>0.</MipEquivalentCut>
+    </algorithm>
+
+   <algorithm type = "MyTestAlgorithm">
+	<OutputClusterListName>MyFirstClusterW</OutputClusterListName>
+    </algorithm>
+
+    <algorithm type = "LArVisualMonitoring">
+        <CaloHitListNames>CaloHitListW CaloHitListU CaloHitListV</CaloHitListNames>
+        <MCParticleListNames>MCParticleList3D</MCParticleListNames>
+        <SuppressMCParticles>22:0.01 2112:1.0</SuppressMCParticles>
+        <ShowDetector>true</ShowDetector>
+	<ClusterListNames>MyFirstClustersW</ClusterListNames>
+    </algorithm>
+</pandora>
+\end{lstlisting}
+
+to 
+
+\begin{lstlisting}[language=XML, caption=New version of PandoraSettings${\_}$Workshop.xml]
+<pandora>
+    <!-- GLOBAL SETTINGS -->
+    <IsMonitoringEnabled>true</IsMonitoringEnabled>
+    <ShouldDisplayAlgorithmInfo>true</ShouldDisplayAlgorithmInfo>
+    <SingleHitTypeClusteringMode>true</SingleHitTypeClusteringMode>
+
+    <!-- ALGORITHM SETTINGS -->
+    <algorithm type = "LArEventReading">
+        <EventFileNameList>/r05/uboone/jjd49/cincinatti_sample/Pandora_Events_Cincinatti_BNB_NuMu_1714.pndr</EventFileNameList>
+        <GeometryFileName>/usera/sv408/WorkshopContent/settings/uboone/Geometry_MicroBooNE.xml</GeometryFileName>
+        <SkipToEvent>0</SkipToEvent>
+    </algorithm>
+
+    <!-- LAR TPC EVENT RECONSTRUCTION -->
+    <algorithm type = "LArListPreparation">
+        <OnlyAvailableCaloHits>true</OnlyAvailableCaloHits>
+        <OutputCaloHitListNameW>CaloHitListW</OutputCaloHitListNameW>
+        <OutputCaloHitListNameU>CaloHitListU</OutputCaloHitListNameU>
+        <OutputCaloHitListNameV>CaloHitListV</OutputCaloHitListNameV>
+        <FilteredCaloHitListName>CaloHitList2D</FilteredCaloHitListName>
+        <CurrentCaloHitListReplacement>CaloHitListW</CurrentCaloHitListReplacement>
+        <OutputMCParticleListNameU>MCParticleListU</OutputMCParticleListNameU>
+        <OutputMCParticleListNameV>MCParticleListV</OutputMCParticleListNameV>
+        <OutputMCParticleListNameW>MCParticleListW</OutputMCParticleListNameW>
+        <OutputMCParticleListName3D>MCParticleList3D</OutputMCParticleListName3D>
+        <CurrentMCParticleListReplacement>MCParticleListW</CurrentMCParticleListReplacement>
+        <MipEquivalentCut>0.</MipEquivalentCut>
+    </algorithm>
+
+<algorithm type = "LArClusteringParent">
+<algorithm type = "LArTrackClusterCreation" description = "ClusterFormation"/>
+<InputCaloHitListName>CaloHitListW</InputCaloHitListName>
+<ClusterListName>MyFirstClustersW</ClusterListName>
+<ReplaceCurrentCaloHitList>false</ReplaceCurrentCaloHitList>
+<ReplaceCurrentClusterList>true</ReplaceCurrentClusterList>
+</algorithm>
+
+ <algorithm type = "LArVisualMonitoring">
+<CaloHitListNames>CaloHitListW</CaloHitListNames>
+<ClusterListNames>MyFirstClustersW</ClusterListNames>
+</algorithm>
+</pandora>
+
+<algorithm type = "MyClusterMerging">
+<InputClusterListName>MyFirstClustersW</InputClusterListName>
+</algorithm>
+
+<algorithm type = "LArVisualMonitoring"> 
+<ClusterListNames>MyFirstClustersW</ClusterListNames> 
+</algorithm> 
+
+</pandora>
+
+\end{lstlisting}
+
+The idea is that we want to visualise the clusters when they are not merged together and when they are. With
+
+\begin{lstlisting}[language=XML]
+<algorithm type = "LArClusteringParent">
+<algorithm type = "LArTrackClusterCreation" description = "ClusterFormation"/>
+<InputCaloHitListName>CaloHitListW</InputCaloHitListName>
+<ClusterListName>MyFirstClustersW</ClusterListName>
+<ReplaceCurrentCaloHitList>false</ReplaceCurrentCaloHitList>
+<ReplaceCurrentClusterList>true</ReplaceCurrentClusterList>
+</algorithm>
+\end{lstlisting}
+
+LArClusteringParent is an algorithm which controls that any CaloHit has not taken or counted twice. LArTrackClusterCreation is the actual logic that fills the clusters with the CaloHits. Then it follows LArVisualMonitoring to visualise the clusters. Then we have:  
+
+\begin{lstlisting}[language=XML]
+<algorithm type = "MyClusterMerging">
+<InputClusterListName>MyFirstClustersW</InputClusterListName>
+</algorithm>
+
+<algorithm type = "LArVisualMonitoring"> 
+<ClusterListNames>MyFirstClustersW</ClusterListNames> 
+</algorithm> 
+\end{lstlisting}
+which calls my new algorithm MyClusterMerging and visualises it. Now it will be shown a first example of mergin algorithm.
+\begin{figure}[h]
+\scalebox{0.25}{\includegraphics[width=0.5\textwidth]{/var/clus/usera/sv408/pandora_script/cluster1_cropped}}
+\centering
+\caption{Set of clusters before merging algorithm}
+\label{fig:cluster1}
+\end{figure}
+\begin{figure}[h]
+\scalebox{0.25}{\includegraphics[width=0.5\textwidth]{/var/clus/usera/sv408/pandora_script/cluster2_cropped}}
+\centering
+\caption{Set of merged clusters after merging algorithm}
+\label{fig:cluster2}
+\end{figure}
+
+\section{Merging Algorithm Using LArPointerCluster} \label{sssec:larpointer_cluster}
+
+
