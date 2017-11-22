@@ -100,7 +100,7 @@ void MyClusterMergingAlgorithm::GetSortedLongClusters(const ClusterList *const p
 	std::sort(sortedLongClusters.begin(), sortedLongClusters.end(), LArClusterHelper::SortByNHits);
 }
 \end{lstlisting}
-GetSortedLongClusters is a function of MyClusterMergingAlgorithm that if the number of CaloHits cointained is bigger than a certain number m${\_}$minClusterCaloHits, it puts that cluster at the end of the list sortedLongClusters. Than, starting from the first element of that list until the last one, those clusters are sorted according to the number of CaloHits in each cluster.
+GetSortedLongClusters is a function of MyClusterMergingAlgorithm that if the number of CaloHits contained\\ is bigger than a certain number m${\_}$minClusterCaloHits, it puts that cluster at the end of the list sortedLongClusters. Than, starting from the first element of that list until the last one, those clusters are sorted according to the number of CaloHits in each cluster.
 \begin{lstlisting}[language=C++]
 bool MyClusterMergingAlgorithm::AreClustersAssociated(const Cluster *const pParentCluster, const Cluster *const pDaughterCluster) const
 {
@@ -163,6 +163,7 @@ You do the same things for the pDaughterCluster plus you request to take cluster
 
 If AreClustersAssociated is not true (the distance is bigger than the max distance), skip that daughter, otherwise merge the cluster and put pDaughterCluster in defunctClusters.\\
 We have then to modify accordingly the header file.
+
 \begin{lstlisting}[language=C++, caption=MyClusterMergingAlgorithm.h]
 #ifndef WORKSHOP_MYCLUSTERMERGING_ALGORITHM_H
 #define WORKSHOP_MYCLUSTERMERGING_ALGORITHM_H 1
@@ -349,6 +350,7 @@ which calls my new algorithm MyClusterMerging and visualises it. Now it will be 
 \caption{Set of clusters before merging algorithm}
 \label{fig:cluster1}
 \end{figure}
+
 \begin{figure}[h]
 \scalebox{0.25}{\includegraphics[width=0.5\textwidth]{/var/clus/usera/sv408/pandora_script/cluster2_cropped}}
 \centering
@@ -357,5 +359,53 @@ which calls my new algorithm MyClusterMerging and visualises it. Now it will be 
 \end{figure}
 
 \section{Merging Algorithm Using LArPointerCluster} \label{sssec:larpointer_cluster}
+To use a more sofisticated tool, substitute in AreClustersAssociated: 
+
+\begin{lstlisting}[language=C++]
+bool MyClusterMergingAlgorithm::AreClustersAssociated(const Cluster *const pParentCluster, const Cluster *const pDaughterCluster) const
+{
+	try
+	{
+	// Useful constructs for pointing information
+		const LArPointingCluster parentPointingCluster(pParentCluster);
+		const LArPointingCluster daughterPointingCluster(pDaughterCluster);
+		LArPointingCluster::Vertex closestVertexParent, closestVertexDaughter;
+		LArPointingClusterHelper::GetClosestVertices(parentPointingCluster, daughterPointingCluster, closestVertexParent, closestVertexDaughter);
+		// Impact parameters
+		float parentDaughterImpactL(std::numeric_limits<float>::max()), parentDaughterImpactT(std::numeric_limits<float>::max());
+		LArPointingClusterHelper::GetImpactParameters(closestVertexParent, closestVertexDaughter, parentDaughterImpactL, parentDaughterImpactT);
+		float daughterParentImpactL(std::numeric_limits<float>::max()), daughterParentImpactT(std::numeric_limits<float>::max());
+		LArPointingClusterHelper::GetImpactParameters(closestVertexDaughter, closestVertexParent, daughterParentImpactL, daughterParentImpactT);
+		// Visualization and debug
+		std::cout << "MyClusterMergingAlgorithm::AreClustersAssociated " << std::endl;
+		std::cout << "parentDaughterImpactL: " << parentDaughterImpactL << ", parentDaughterImpactT " << parentDaughterImpactT << std::endl;
+		std::cout << "daughterParentImpactL: " << daughterParentImpactL << ", daughterParentImpactT " << daughterParentImpactT << std::endl;
+		ClusterList parentList, daughterList;
+		parentList.push_back(pParentCluster); daughterList.push_back(pDaughterCluster);
+		PandoraMonitoringApi::VisualizeClusters(this->GetPandora(), &parentList, "ParentCluster", RED);
+		PandoraMonitoringApi::VisualizeClusters(this->GetPandora(), &daughterList, "DaughterCluster", BLUE);
+		PandoraMonitoringApi::AddMarkerToVisualization(this->GetPandora(), &(closestVertexParent.GetPosition()), "ParentVertex", ORANGE, 2);
+		PandoraMonitoringApi::AddMarkerToVisualization(this->GetPandora(), &(closestVertexDaughter.GetPosition()), "DaughterVertex", GREEN, 2);
+		PandoraMonitoringApi::ViewEvent(this->GetPandora());
+		// Make decision
+		if (((parentDaughterImpactL < m_maxImpactL) && (parentDaughterImpactT < m_maxImpactT)) || ((daughterParentImpactL < m_maxImpactL) && (daughterParentImpactT < m_maxImpactT)))
+		{
+			return true;
+		}
+	}
+	catch (const StatusCodeException &statusCodeException)
+	{
+		std::cout << "MyClusterMergingAlgorithm::AreClustersAssociated " << statusCodeException.ToString() << std::endl;
+	}
+	return false;
+}
+\end{lstlisting}
+
+and remeber to add
+
+\begin{lstlisting}
+#include "larpandoracontent/LArHelpers/LArPointingClusterHelper.h"
+\end{lstlisting}
+
 
 

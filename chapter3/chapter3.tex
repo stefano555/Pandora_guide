@@ -6,15 +6,15 @@ Blablablabla
 
 First of all, in the following section we will modify many times many files. As a rule, every time we modify a .cc or .h file, before launching the modified progroamm we will run
 
-\begin{numVblock}\label{code:build}
 
-\begin{verbatim}
+
+\begin{lstlisting}[caption=Build, label=build]
 
 cd $MY_TEST_AREA/WorkshopContent/build/
 make install
 
-\end{verbatim}
-\end{numVblock}
+\end{lstlisting}
+
 
 If instead we modify a .xml, there is no need to run make install. In the following we will use many times files from the XmlHelper.h. For the pourpose of this guide, you do not need neither to modify nor to know this files, but in case you were curious you can find it in the Pandora Software Development Kit (PandoraSDK) located in:
 
@@ -264,16 +264,16 @@ make install
 
 
 At this point, you can try to run the program with:
-\begin{numVblock}\label{code:launch}
-\begin{verbatim}
+
+\begin{lstlisting}[label=launch]
 $MY_TEST_AREA/WorkshopContent/bin/PandoraWorkshop                      \
 -i $MY_TEST_AREA\WorkshopContent/settings/PandoraSettings_Workshop.xml \
 -n 10
-\end{verbatim}
-\end{numVblock}
+\end{lstlisting}
+
 and you will get this error:
 
-\begin{lstlisting}[language=Basic, caption=Python example]
+\begin{lstlisting}[caption=Python example]
 XmlHelper::ReadValue(xmlHandle,"MyMandatoryString", m_myMandatoryString) return STATUS_CODE_NOT_FOUND
     in function: ReadSettings
     in file:     /usera/sv408/WorkshopContent/workshopcontent/Algorithms/MyTestAlgorithm.cc line#: 46
@@ -318,7 +318,7 @@ $MY_TEST_AREA/WorkshopContent/bin/PandoraWorkshop                      \
 
 and you will see that in the output will appear also
 
-\begin{lstlisting}[language=Basic, caption=Python example]
+\begin{lstlisting}[caption=Python example]
 > Running Algorithm: Alg0001, LArEventReading
 > Running Algorithm: Alg0002, LArListPreparation
 > Running Algorithm: Alg0003, MyTestAlgorithm
@@ -452,7 +452,7 @@ inline pandora::Algorithm *MyTestAlgorithm::Factory::CreateAlgorithm() const
 
 Now, after building it as in code \ref{code:build}, run it using \ref{code:launch} and this is the outcome:
 
-\begin{lstlisting}[language=Basic, caption=Python example]
+\begin{lstlisting}[caption=Python example]
 > Running Algorithm: Alg0001, LArEventReading
 > Running Algorithm: Alg0002, LArListPreparation
 > Running Algorithm: Alg0003, MyTestAlgorithm
@@ -562,7 +562,7 @@ StatusCode MyTestAlgorithm::ReadSettings(const TiXmlHandle) //xmlHandle)
 
 and the output will be:
 
-\begin{lstlisting}[language=Basic, caption=Output of the programm]
+\begin{lstlisting}[caption=Output of the programm]
 ...
 InputMCParticle - PDG: 2212, nParents 0, nDaughters 0
 InputMCParticle - PDG: 13, nParents 0, nDaughters 0
@@ -804,9 +804,9 @@ inline pandora::Algorithm *MyTestAlgorithm::Factory::CreateAlgorithm() const
 #endif // #ifndef WORKSHOP_MYTEST_ALGORITHM_H
 \end{lstlisting}
 
-and the PandoraSettings_Workshop.xml
+and the PandoraSettings${\_}$Workshop.xml
 
-\begin{lstlisting}[language=C++, label=code:first_cluster.xml, caption=PandoraSettings_Workshop.xml]
+\begin{lstlisting}[language=C++, label=code:first_cluster.xml, caption=PandoraSettings${\_}$Workshop.xml]
 <pandora>
     <!-- GLOBAL SETTINGS -->
     <IsMonitoringEnabled>true</IsMonitoringEnabled>
@@ -928,6 +928,5 @@ StatusCode MyTestAlgorithm::ReadSettings(const TiXmlHandle xmlHandle)
 
 ReadValue reads a vector of values from a (space separated) list in an xml element.
 
-\begin{lstlisting}[language=C++]
-\end{lstlisting}
+
 
